@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI,HTTPException
 from chatbot import load_video,ask_question,get_video_id
 from pydantic import BaseModel,Field
 from typing import Annotated
@@ -42,7 +42,7 @@ def ask_query(query:Question):
     video_id=get_video_id(query.url)
 
     if video_id not in video_vectorstores:
-        return {"error":"video already exist"}
+        raise HTTPException(status_code=400, detail="Video not loaded yet")
     
     video_vector=video_vectorstores[video_id]
 
