@@ -58,7 +58,7 @@ function App() {
         { role: "bot", text: data.answer }
       ])
 
-    } catch (err) {
+    } catch {
 
       setMessages(prev => [
         ...prev,
@@ -82,23 +82,23 @@ function App() {
 
     return (
 
-      <div className="w-[420px] h-[520px] bg-white flex flex-col items-center justify-center text-center p-6">
+      <div className="w-[420px] h-[520px] bg-gradient-to-br from-red-50 to-white flex flex-col items-center justify-center text-center p-8">
 
-        <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center text-3xl">
-          ▶️
+        <div className="w-20 h-20 rounded-full bg-red-600 text-white flex items-center justify-center text-3xl shadow-lg">
+          ▶
         </div>
 
-        <h1 className="text-2xl font-bold mt-5">
-          Welcome to <span className="text-red-600">YouTube AI</span>
+        <h1 className="text-2xl font-bold mt-6 text-gray-800">
+          Welcome to <span className="text-red-600">ClipSense</span>
         </h1>
 
-        <p className="text-gray-500 text-sm mt-3">
-          Chat with any YouTube video and understand concepts faster.
+        <p className="text-gray-500 text-sm mt-3 leading-relaxed max-w-xs">
+          Ask questions about any YouTube video and get instant AI explanations.
         </p>
 
         <button
           onClick={() => setStarted(true)}
-          className="mt-8 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-md transition"
+          className="mt-8 bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-full text-sm font-semibold shadow-lg transition"
         >
           Start Chat
         </button>
@@ -113,21 +113,26 @@ function App() {
 
   return (
 
-    <div className="w-[420px] h-[520px] flex flex-col bg-gray-50">
+    <div className="w-[420px] h-[520px] flex flex-col bg-gradient-to-b from-white to-gray-100">
 
       {/* Header */}
 
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
+      <div className="flex items-center justify-between px-4 py-3 bg-white border-b shadow-sm">
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
 
-          <div className="w-8 h-8 rounded-full bg-red-600 text-white flex items-center justify-center text-sm">
-            AI
+          <div className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center text-sm font-bold">
+            CS
           </div>
 
-          <span className="font-semibold text-gray-800">
-            YouTube Study Assistant
-          </span>
+          <div className="flex flex-col leading-tight">
+            <span className="font-semibold text-gray-800 text-sm">
+              ClipSense AI
+            </span>
+            <span className="text-xs text-gray-400">
+              YouTube Study Assistant
+            </span>
+          </div>
 
         </div>
 
@@ -139,7 +144,7 @@ function App() {
 
         {messages.length === 0 && (
 
-          <div className="text-center text-gray-400 text-sm mt-12">
+          <div className="text-center text-gray-400 text-sm mt-16">
             Ask anything about this video 🎓
           </div>
 
@@ -159,8 +164,8 @@ function App() {
             <div
               className={
                 msg.role === "user"
-                  ? "bg-red-600 text-white px-4 py-2 rounded-xl max-w-[80%] text-sm"
-                  : "bg-white border px-4 py-2 rounded-xl max-w-[80%] text-sm shadow-sm"
+                  ? "bg-red-600 text-white px-4 py-2 rounded-2xl rounded-br-sm max-w-[80%] text-sm shadow-md"
+                  : "bg-white border px-4 py-2 rounded-2xl rounded-bl-sm max-w-[80%] text-sm shadow-sm"
               }
             >
               {msg.text}
@@ -174,7 +179,7 @@ function App() {
 
           <div className="flex justify-start">
 
-            <div className="bg-white border px-4 py-2 rounded-xl shadow-sm flex gap-1">
+            <div className="bg-white border px-4 py-2 rounded-xl shadow-sm flex gap-2">
 
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-150"></div>
@@ -204,7 +209,7 @@ function App() {
 
         <button
           onClick={sendMessage}
-          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold"
+          className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-sm"
         >
           Ask
         </button>
