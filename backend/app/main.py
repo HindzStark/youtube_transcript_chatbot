@@ -1,11 +1,16 @@
 from fastapi import FastAPI,HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from chatbot import load_video,ask_question,get_video_id
 from pydantic import BaseModel,Field
 from typing import Annotated
-import json
 
 
 app=FastAPI()
+
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 class VideoRequest(BaseModel):
     url: Annotated[str,Field(...,description="Url of the video")]
@@ -53,3 +58,12 @@ def ask_query(query:Question):
     )
 
     return{"answer":answer}
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
