@@ -1,6 +1,6 @@
 from fastapi import FastAPI,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from chatbot import (
+from app.chatbot import (
     load_video,
     ask_question,
     get_video_id,
