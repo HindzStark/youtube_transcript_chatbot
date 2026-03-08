@@ -7,7 +7,6 @@ from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from urllib.parse import urlparse, parse_qs
 from youtube_transcript_api import YouTubeTranscriptApi
-from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint
 
 load_dotenv()
 
@@ -34,14 +33,6 @@ class LoadVideoError(Exception):
 # url=input("Enter video url:")
 # url="https://www.youtube.com/watch?v=RLtyhwFtXQA"
 # url="https://www.youtube.com/watch?v=J5_-l7WIO_w&list=PLKnIA16_RmvaTbihpo4MtzVm4XOQa0ER0&index=17"
-
-
-llmEndpoint=HuggingFaceEndpoint(
-    model="meta-llama/Llama-3.2-1B-Instruct",
-    task="text-generation"
-)
-
-llm=ChatHuggingFace(llm=llmEndpoint)
 
 
 def get_video_id(url: str) -> str:
@@ -76,6 +67,7 @@ def get_transcript_text(video_id: str) -> str:
         yt_instance = YouTubeTranscriptApi()
         transcript_languages_list = yt_instance.list(video_id)
 
+        llm = ChatOpenAI(model="gpt-4o-mini")
         
 
         prompt = ChatPromptTemplate.from_messages([
@@ -198,7 +190,7 @@ def ask_question(vector_store, question: str, result_length: int):
         k = 12
 
     try:
-        # model = ChatOpenAI(model="gpt-4o-mini", model_kwargs={"max_tokens": token})
+        model = ChatOpenAI(model="gpt-4o-mini", model_kwargs={"max_tokens": token})
         parser = StrOutputParser()
 
         # creating retriever
@@ -230,7 +222,7 @@ def ask_question(vector_store, question: str, result_length: int):
             "question": RunnablePassthrough()
         })
 
-        chain = parallel_chain | prompt | llm | parser
+        chain = parallel_chain | prompt | model | parser
 
         result = chain.invoke(question)
 
