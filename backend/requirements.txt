@@ -5,6 +5,7 @@ langchain
 langchain-openai
 langchain-core
 langchain-community
+langchain-huggingface
 langchain-text-splitters
 openai
 faiss-cpu

@@ -7,17 +7,48 @@ from langchain_community.vectorstores import FAISS
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from urllib.parse import urlparse, parse_qs
 from youtube_transcript_api import YouTubeTranscriptApi
+from langchain_huggingface import ChatHuggingFace,HuggingFaceEndpoint
 
 load_dotenv()
+
+
+class InvalidYouTubeUrlError(ValueError):
+    pass
+
+
+class TranscriptNotAvailableError(Exception):
+    pass
+
+
+class VectorStoreError(Exception):
+    pass
+
+
+class QuestionAnswerError(Exception):
+    pass
+
+
+class LoadVideoError(Exception):
+    pass
 
 # url=input("Enter video url:")
 # url="https://www.youtube.com/watch?v=RLtyhwFtXQA"
 # url="https://www.youtube.com/watch?v=J5_-l7WIO_w&list=PLKnIA16_RmvaTbihpo4MtzVm4XOQa0ER0&index=17"
 
 
+llmEndpoint=HuggingFaceEndpoint(
+    model="meta-llama/Llama-3.2-1B-Instruct",
+    task="text-generation"
+)
+
+llm=ChatHuggingFace(llm=llmEndpoint)
+
+
 def get_video_id(url: str) -> str:
+    if not isinstance(url, str) or not url.strip():
+        raise InvalidYouTubeUrlError("Invalid YouTube URL")
     
-    parsed_url = urlparse(url)
+    parsed_url = urlparse(url.strip())
 
     # Handle standard YouTube URL
     if "youtube.com" in parsed_url.netloc:
@@ -30,7 +61,7 @@ def get_video_id(url: str) -> str:
     if "youtu.be" in parsed_url.netloc:
         return parsed_url.path.lstrip("/")
     
-    raise ValueError("Invalid YouTube URL")
+    raise InvalidYouTubeUrlError("Invalid YouTube URL")
 
 
 # video_id=get_video_id(url)
@@ -38,11 +69,14 @@ def get_video_id(url: str) -> str:
 
 
 def get_transcript_text(video_id: str) -> str:
+    if not video_id:
+        raise TranscriptNotAvailableError("Transcript not available")
+
     try:
         yt_instance = YouTubeTranscriptApi()
         transcript_languages_list = yt_instance.list(video_id)
 
-        llm = ChatOpenAI(model="gpt-4o-mini")
+        
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are a translator. Translate the given text from {source_lang} to English. Only return the translated text."),
@@ -65,6 +99,9 @@ def get_transcript_text(video_id: str) -> str:
 
         transcript_list = transcript.fetch()
         transcript_text = " ".join(item.text for item in transcript_list)
+
+        if not transcript_text.strip():
+            raise TranscriptNotAvailableError("Transcript not available")
 
         #  Translate per chunk only if not English
         if transcript_language != "en":
@@ -89,24 +126,40 @@ def get_transcript_text(video_id: str) -> str:
             # Replace transcript_text completely
             transcript_text = " ".join(translated_parts)
 
+            if not transcript_text.strip():
+                raise TranscriptNotAvailableError("Transcript not available")
+
         # IMPORTANT: always return transcript_text
         return transcript_text
 
-    except Exception:
-        raise Exception("Transcript not available")
+    except TranscriptNotAvailableError:
+        raise
+    except Exception as exc:
+        raise TranscriptNotAvailableError("Transcript not available") from exc
 
 
 def build_vector_store(transcript_text: str):
-    # splitting complete trancript and storing in vector store
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1200, 
-        chunk_overlap=200
-    )
+    if not isinstance(transcript_text, str) or not transcript_text.strip():
+        raise VectorStoreError("Could not build vector store")
 
-    chunks = splitter.create_documents([transcript_text])
-    embedding = OpenAIEmbeddings(model="text-embedding-3-small")
-    vector_store = FAISS.from_documents(chunks, embedding)
-    return vector_store
+    # splitting complete trancript and storing in vector store
+    try:
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1200, 
+            chunk_overlap=200
+        )
+
+        chunks = splitter.create_documents([transcript_text])
+        if not chunks:
+            raise VectorStoreError("Could not build vector store")
+
+        embedding = OpenAIEmbeddings(model="text-embedding-3-small")
+        vector_store = FAISS.from_documents(chunks, embedding)
+        return vector_store
+    except VectorStoreError:
+        raise
+    except Exception as exc:
+        raise VectorStoreError("Could not build vector store") from exc
 
 
 # input question
@@ -116,6 +169,15 @@ def build_vector_store(transcript_text: str):
 
 
 def ask_question(vector_store, question: str, result_length: int):
+    if vector_store is None:
+        raise QuestionAnswerError("Video data is not loaded")
+
+    if not isinstance(question, str) or not question.strip():
+        raise QuestionAnswerError("Question cannot be empty")
+
+    if not isinstance(result_length, int) or result_length < 1 or result_length > 5:
+        raise QuestionAnswerError("Answer length must be between 1 and 5")
+
     token = 100
     k = 3
 
@@ -135,23 +197,24 @@ def ask_question(vector_store, question: str, result_length: int):
         token = 1000
         k = 12
 
-    model = ChatOpenAI(model="gpt-4o-mini", max_tokens=token)
-    parser = StrOutputParser()
+    try:
+        # model = ChatOpenAI(model="gpt-4o-mini", model_kwargs={"max_tokens": token})
+        parser = StrOutputParser()
 
-    # creating retriever
-    retriever = vector_store.as_retriever(
-        search_type="mmr",
-        search_kwargs={"k": k}
-    )
+        # creating retriever
+        retriever = vector_store.as_retriever(
+            search_type="mmr",
+            search_kwargs={"k": k}
+        )
 
-    # get all retrieved text together
-    def getcontext(retrieved_text):
-        context = " ".join(doc.page_content for doc in retrieved_text)
-        return context
+        # get all retrieved text together
+        def getcontext(retrieved_text):
+            context = " ".join(doc.page_content for doc in retrieved_text)
+            return context
 
-    # chain logic
-    prompt = PromptTemplate(
-        template="""
+        # chain logic
+        prompt = PromptTemplate(
+            template="""
         You are a helpful assistant.
         Answer ONLY from the provided transcript context.
         If the context is insufficient, just say you don't know.
@@ -159,26 +222,38 @@ def ask_question(vector_store, question: str, result_length: int):
         {context}
         Question: {question}
         """,
-        input_variables=["context", "question"]
-    )
+            input_variables=["context", "question"]
+        )
 
-    parallel_chain = RunnableParallel({
-        "context": retriever | RunnableLambda(getcontext),
-        "question": RunnablePassthrough()
-    })
+        parallel_chain = RunnableParallel({
+            "context": retriever | RunnableLambda(getcontext),
+            "question": RunnablePassthrough()
+        })
 
-    chain = parallel_chain | prompt | model | parser
+        chain = parallel_chain | prompt | llm | parser
 
-    result = chain.invoke(question)
+        result = chain.invoke(question)
 
-    return result
+        if not result:
+            raise QuestionAnswerError("No answer generated")
+
+        return result
+    except QuestionAnswerError:
+        raise
+    except Exception as exc:
+        raise QuestionAnswerError("Failed to answer question") from exc
 
 
 # print(result)
 
 
 def load_video(video_url: str):
-    video_id = get_video_id(video_url)
-    transcript = get_transcript_text(video_id)
-    vector_store = build_vector_store(transcript)
-    return vector_store
+    try:
+        video_id = get_video_id(video_url)
+        transcript = get_transcript_text(video_id)
+        vector_store = build_vector_store(transcript)
+        return vector_store
+    except (InvalidYouTubeUrlError, TranscriptNotAvailableError, VectorStoreError):
+        raise
+    except Exception as exc:
+        raise LoadVideoError("Failed to load video") from exc
