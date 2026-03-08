@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "YouTube RAG Chatbot",
+  "name": "ClipSens YouTube RAG Chatbot",
   "version": "1.0",
   "description": "Chat with any YouTube video",
   "permissions": ["activeTab", "tabs"],
@@ -8,6 +8,16 @@
     "http://127.0.0.1:8000/*"
   ],
   "action": {
-    "default_popup": "index.html"
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   }
 }

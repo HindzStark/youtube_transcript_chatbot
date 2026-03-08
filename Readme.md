@@ -83,10 +83,9 @@ YoutubChatBot/
 From project root:
 
 ```bash
-cd backend
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
 Create environment file:
@@ -100,7 +99,7 @@ EOF
 Run API server:
 
 ```bash
-cd app
+cd backend/app
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -208,6 +207,11 @@ Response:
 	- Verify `OPENAI_API_KEY` in `backend/.env`.
 	- Restart backend after updating environment variables.
 
+- **`Import "langchain_huggingface" could not be resolved` (or similar import errors in VS Code)**
+	- Activate and use the project interpreter: `.venv/bin/python`.
+	- Install dependencies with: `pip install -r backend/requirements.txt`.
+	- In VS Code, select the same interpreter and reload Pylance if needed.
+
 ---
 
 ## Development Notes
@@ -222,11 +226,10 @@ Response:
 
 ```bash
 # Terminal 1 (backend)
-cd backend
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-cd app
+pip install -r backend/requirements.txt
+cd backend/app
 uvicorn main:app --reload
 
 # Terminal 2 (extension)
