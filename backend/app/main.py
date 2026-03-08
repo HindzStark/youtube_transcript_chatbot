@@ -1,15 +1,27 @@
 from fastapi import FastAPI,HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.chatbot import (
-    load_video,
-    ask_question,
-    get_video_id,
-    InvalidYouTubeUrlError,
-    TranscriptNotAvailableError,
-    VectorStoreError,
-    QuestionAnswerError,
-    LoadVideoError,
-)
+try:
+    from app.chatbot import (
+        load_video,
+        ask_question,
+        get_video_id,
+        InvalidYouTubeUrlError,
+        TranscriptNotAvailableError,
+        VectorStoreError,
+        QuestionAnswerError,
+        LoadVideoError,
+    )
+except ModuleNotFoundError:
+    from chatbot import (
+        load_video,
+        ask_question,
+        get_video_id,
+        InvalidYouTubeUrlError,
+        TranscriptNotAvailableError,
+        VectorStoreError,
+        QuestionAnswerError,
+        LoadVideoError,
+    )
 from pydantic import BaseModel,Field
 from typing import Annotated
 
